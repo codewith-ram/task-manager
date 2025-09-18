@@ -13,6 +13,11 @@ A modern, responsive task management application inspired by Jira, built with HT
 - 🌓 Dark/Light mode support
 - 📱 Fully responsive design
 
+PREVIEW THE WEBSITE
+ ```bash
+https://task-manager-codewith-ram.netlify.app/
+ ```
+
 ## Screenshot
 
 ![Task Manager Interface]
