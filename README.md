@@ -15,7 +15,9 @@ A modern, responsive task management application inspired by Jira, built with HT
 
 ## Screenshot
 
-![Task Manager Interface](https://i.imgur.com/placeholder.png)
+![Task Manager Interface]
+![Uploading task manager.png…]()
+
 *Screenshot of the Task Manager interface*
 
 ## Getting Started
