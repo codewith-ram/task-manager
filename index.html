@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jira-like Task Manager</title>
+    <title>Task Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -17,8 +17,54 @@
                     colors: {
                         primary: {
                             50: '#f0f7ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            300: '#7dd3fc',
+                            400: '#38bdf8',
+                            500: '#0ea5e9',
                             600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
                         },
+                        gray: {
+                            50: '#f9fafb',
+                            100: '#f3f4f6',
+                            200: '#e5e7eb',
+                            300: '#d1d5db',
+                            400: '#9ca3af',
+                            500: '#6b7280',
+                            600: '#4b5563',
+                            700: '#374151',
+                            800: '#1f2937',
+                            900: '#111827',
+                        },
+                        success: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#10b981',
+                            700: '#047857',
+                        },
+                        warning: {
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            500: '#f59e0b',
+                            700: '#b45309',
+                        },
+                        danger: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            500: '#ef4444',
+                            700: '#b91c1c',
+                        },
+                    },
+                    boxShadow: {
+                        'card': '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
+                        'card-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
+                        'sidebar': '4px 0 6px -1px rgba(0, 0, 0, 0.1), 2px 0 4px -2px rgba(0, 0, 0, 0.1)',
+                    },
+                    borderRadius: {
+                        '4xl': '2rem',
                     },
                 }
             }
@@ -27,18 +73,18 @@
     <style>
         /* Custom scrollbar */
         ::-webkit-scrollbar { 
-            width: 8px; 
-            height: 8px; 
+            width: 6px; 
+            height: 6px; 
         }
         
         ::-webkit-scrollbar-track { 
             background-color: #f3f4f6;
-            border-radius: 4px;
+            border-radius: 3px;
         }
         
         ::-webkit-scrollbar-thumb { 
             background-color: #d1d5db;
-            border-radius: 4px;
+            border-radius: 3px;
         }
         
         ::-webkit-scrollbar-thumb:hover { 
@@ -50,142 +96,466 @@
             scrollbar-width: thin;
             scrollbar-color: #d1d5db #f3f4f6;
         }
+        
+        /* Smooth transitions */
+        .transition-all {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        /* Card hover effect */
+        .task-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .task-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Animation for task cards */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        /* Drag and drop styles */
+        .drag-over {
+            background-color: #f0f9ff;
+            border: 2px dashed #38bdf8;
+        }
+        
+        .drag-preview {
+            opacity: 0.8;
+            transform: rotate(2deg);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
-    <header class="bg-white shadow-sm sticky top-0 z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex justify-between items-center">
+<body class="bg-gray-100 min-h-screen flex overflow-hidden">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white h-screen flex-shrink-0 shadow-sidebar flex flex-col">
+        <div class="p-4 border-b border-gray-200">
             <div class="flex items-center space-x-3">
-                <div class="flex items-center justify-center w-8 h-8 rounded-md bg-blue-600 text-white">
-                    <i class="fab fa-jira text-xl"></i>
+                <div class="flex items-center justify-center w-8 h-8 rounded-md bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+                    <i class="fas fa-tasks text-lg"></i>
                 </div>
-                <h1 class="text-xl font-bold text-gray-900">Task Board</h1>
+                <h1 class="text-xl font-bold text-gray-800">TaskFlow</h1>
             </div>
-            <button id="createIssueBtn" class="px-4 py-2 rounded-md font-medium transition-colors duration-200 flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700">
-                <i class="fas fa-plus"></i>
-                <span class="hidden sm:inline">Create Issue</span>
-            </button>
         </div>
-    </header>
-
-    <main class="flex-1 overflow-x-auto py-6 px-4">
-        <div class="flex space-x-4">
-            <!-- Backlog Column -->
-            <div class="bg-gray-50 rounded-lg p-3 w-72 flex-shrink-0 flex flex-col h-[calc(100vh-120px)] border border-gray-200" data-status="backlog">
-                <div class="flex justify-between items-center mb-3 px-2">
-                    <h3 class="text-sm font-medium text-gray-700 uppercase tracking-wider">Backlog</h3>
-                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-200 text-gray-600 rounded-full" id="backlog-count">0</span>
-                </div>
-                <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="backlog-tasks" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="this.classList.add('bg-blue-50', 'border-blue-200')" ondragleave="this.classList.remove('bg-blue-50', 'border-blue-200')">
-                    <!-- Tasks will be added here dynamically -->
-                </div>
-                <button class="mt-2 w-full text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-md flex items-center justify-center gap-2 transition-colors duration-200" onclick="openAddTaskModal('backlog')">
-                    <i class="fas fa-plus"></i>
-                    <span>Add Task</span>
+        <nav class="flex-1 overflow-y-auto p-4 space-y-1">
+            <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-100 text-blue-700 rounded-md group">
+                <i class="fas fa-tachometer-alt w-5 h-5 mr-3 text-blue-600"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md group">
+                <i class="fas fa-inbox w-5 h-5 mr-3 text-gray-500 group-hover:text-gray-700"></i>
+                <span>Inbox</span>
+                <span class="ml-auto bg-gray-200 text-gray-600 text-xs font-medium px-2 py-0.5 rounded-full">5</span>
+            </a>
+            <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md group">
+                <i class="fas fa-calendar-alt w-5 h-5 mr-3 text-gray-500 group-hover:text-gray-700"></i>
+                <span>Today</span>
+            </a>
+            <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md group">
+                <i class="fas fa-calendar-week w-5 h-5 mr-3 text-gray-500 group-hover:text-gray-700"></i>
+                <span>Upcoming</span>
+                <span class="ml-auto bg-gray-200 text-gray-600 text-xs font-medium px-2 py-0.5 rounded-full">3</span>
+            </a>
+            <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md group">
+                <i class="fas fa-star w-5 h-5 mr-3 text-amber-400"></i>
+                <span>Important</span>
+            </a>
+            <div class="pt-4 mt-4 border-t border-gray-200">
+                <h3 class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Projects</h3>
+                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md group">
+                    <span class="w-2 h-2 rounded-full bg-blue-500 mr-3"></span>
+                    <span>Website Redesign</span>
+                </a>
+                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md group">
+                    <span class="w-2 h-2 rounded-full bg-green-500 mr-3"></span>
+                    <span>Mobile App</span>
+                </a>
+                <a href="#" class="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md group">
+                    <span class="w-2 h-2 rounded-full bg-purple-500 mr-3"></span>
+                    <span>Marketing</span>
+                </a>
+                <button class="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-md mt-1">
+                    <i class="fas fa-plus w-5 h-5 mr-3 text-gray-400"></i>
+                    <span>Add Project</span>
                 </button>
             </div>
-
-            <!-- To Do Column -->
-            <div class="bg-gray-50 rounded-lg p-3 w-72 flex-shrink-0 flex flex-col h-[calc(100vh-120px)] border border-gray-200" data-status="todo">
-                <div class="flex justify-between items-center mb-3 px-2">
-                    <h3 class="text-sm font-medium text-gray-700 uppercase tracking-wider">To Do</h3>
-                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-200 text-gray-600 rounded-full" id="todo-count">0</span>
+        </nav>
+        <div class="p-4 border-t border-gray-200">
+            <div class="flex items-center">
+                <img class="h-8 w-8 rounded-full" src="https://ui-avatars.com/api/?name=User&background=0ea5e9&color=fff" alt="User">
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-gray-700">John Doe</p>
+                    <p class="text-xs text-gray-500">View Profile</p>
                 </div>
-                <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="todo-tasks" ondrop="drop(event)" ondragover="allowDrop(event)">
-                    <!-- Tasks will be added here dynamically -->
-                </div>
-                <button class="mt-2 w-full text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-md flex items-center justify-center gap-2" onclick="openAddTaskModal('todo')">
-                    <i class="fas fa-plus"></i>
-                    <span>Add Task</span>
-                </button>
             </div>
+        </div>
+    </aside>
 
-            <!-- In Progress Column -->
-            <div class="bg-gray-50 rounded-lg p-3 w-72 flex-shrink-0 flex flex-col h-[calc(100vh-120px)] border border-gray-200" data-status="in-progress">
-                <div class="flex justify-between items-center mb-3 px-2">
-                    <h3 class="text-sm font-medium text-gray-700 uppercase tracking-wider">In Progress</h3>
-                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-200 text-gray-600 rounded-full" id="in-progress-count">0</span>
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <header class="bg-white shadow-sm z-10">
+            <div class="px-6 py-3 flex justify-between items-center">
+                <div class="flex items-center">
+                    <h2 class="text-lg font-semibold text-gray-900">My Tasks</h2>
+                    <div class="ml-4 flex space-x-1">
+                        <button class="px-3 py-1 text-sm font-medium text-blue-700 bg-blue-100 rounded-md">All</button>
+                        <button class="px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">Active</button>
+                        <button class="px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-md">Completed</button>
+                    </div>
                 </div>
-                <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="in-progress-tasks" ondrop="drop(event)" ondragover="allowDrop(event)">
-                    <!-- Tasks will be added here dynamically -->
+                <div class="flex items-center space-x-3">
+                    <div class="relative">
+                        <input type="text" placeholder="Search tasks..." class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                    <button class="p-2 text-gray-500 hover:bg-gray-100 rounded-full">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    <button id="createIssueBtn" class="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-sm font-medium rounded-lg shadow-sm hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 flex items-center">
+                        <i class="fas fa-plus mr-2"></i>
+                        <span>Add Task</span>
+                    </button>
                 </div>
-                <button class="mt-2 w-full text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-md flex items-center justify-center gap-2" onclick="openAddTaskModal('in-progress')">
-                    <i class="fas fa-plus"></i>
-                    <span>Add Task</span>
-                </button>
             </div>
+        </header>
 
-            <!-- Done Column -->
-            <div class="bg-gray-50 rounded-lg p-3 w-72 flex-shrink-0 flex flex-col h-[calc(100vh-120px)] border border-gray-200" data-status="done">
-                <div class="flex justify-between items-center mb-3 px-2">
-                    <h3 class="text-sm font-medium text-gray-700 uppercase tracking-wider">Done</h3>
-                    <span class="px-2 py-0.5 text-xs font-medium bg-gray-200 text-gray-600 rounded-full" id="done-count">0</span>
+        <main class="flex-1 overflow-x-auto p-6 bg-gray-100">
+            <div class="flex space-x-6 h-full">
+                <!-- Backlog Column -->
+                <div class="bg-white rounded-xl p-4 w-80 flex-shrink-0 flex flex-col h-[calc(100vh-120px)] shadow-sm border border-gray-200" data-status="backlog">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 rounded-full bg-gray-300 mr-2"></div>
+                            <h3 class="text-sm font-semibold text-gray-700">Backlog</h3>
+                            <span class="ml-2 px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded-full" id="backlog-count">0</span>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto pr-2 space-y-3" id="backlog-tasks" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        <!-- Tasks will be added here dynamically -->
+                        <div class="task-card bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-move" draggable="true" ondragstart="dragStart(event)">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-medium text-gray-900">Update homepage hero section</h4>
+                                <div class="flex space-x-1">
+                                    <span class="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">UI/UX</span>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-3">Redesign the hero section with the new brand colors and messaging.</p>
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <div class="flex items-center">
+                                    <i class="far fa-calendar-alt mr-1"></i>
+                                    <span>Due in 2 days</span>
+                                </div>
+                                <div class="flex -space-x-1">
+                                    <img class="h-6 w-6 rounded-full border-2 border-white" src="https://randomuser.me/api/portraits/women/44.jpg" alt="">
+                                    <img class="h-6 w-6 rounded-full border-2 border-white" src="https://randomuser.me/api/portraits/men/32.jpg" alt="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="mt-3 w-full text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 p-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200 border border-dashed border-gray-300" onclick="openAddTaskModal('backlog')">
+                        <i class="fas fa-plus"></i>
+                        <span>Add Task</span>
+                    </button>
                 </div>
-                <div class="flex-1 overflow-y-auto space-y-2 pr-1" id="done-tasks" ondrop="drop(event)" ondragover="allowDrop(event)">
-                    <!-- Tasks will be added here dynamically -->
+
+                <!-- To Do Column -->
+                <div class="bg-white rounded-xl p-4 w-80 flex-shrink-0 flex flex-col h-[calc(100vh-120px)] shadow-sm border border-gray-200" data-status="todo">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 rounded-full bg-blue-500 mr-2"></div>
+                            <h3 class="text-sm font-semibold text-gray-700">To Do</h3>
+                            <span class="ml-2 px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full" id="todo-count">2</span>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto pr-2 space-y-3" id="todo-tasks" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        <!-- Sample Task 1 -->
+                        <div class="task-card bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-move" draggable="true" ondragstart="dragStart(event)">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-medium text-gray-900">Implement user authentication</h4>
+                                <div class="flex space-x-1">
+                                    <span class="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded-full">Backend</span>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-3">Set up JWT authentication for the API endpoints.</p>
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <div class="flex items-center">
+                                    <i class="far fa-calendar-alt mr-1"></i>
+                                    <span>Due tomorrow</span>
+                                </div>
+                                <div class="flex -space-x-1">
+                                    <img class="h-6 w-6 rounded-full border-2 border-white" src="https://randomuser.me/api/portraits/men/32.jpg" alt="">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sample Task 2 -->
+                        <div class="task-card bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-move" draggable="true" ondragstart="dragStart(event)">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-medium text-gray-900">Fix mobile navigation</h4>
+                                <div class="flex space-x-1">
+                                    <span class="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">Frontend</span>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-3">Navigation menu is not collapsing properly on mobile devices.</p>
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <div class="flex items-center">
+                                    <i class="far fa-calendar-alt mr-1"></i>
+                                    <span>Due in 3 days</span>
+                                </div>
+                                <div class="flex -space-x-1">
+                                    <img class="h-6 w-6 rounded-full border-2 border-white" src="https://randomuser.me/api/portraits/women/44.jpg" alt="">
+                                    <img class="h-6 w-6 rounded-full border-2 border-white" src="https://randomuser.me/api/portraits/men/22.jpg" alt="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="mt-3 w-full text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 p-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200 border border-dashed border-gray-300" onclick="openAddTaskModal('todo')">
+                        <i class="fas fa-plus"></i>
+                        <span>Add Task</span>
+                    </button>
                 </div>
-                <button class="mt-2 w-full text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-md flex items-center justify-center gap-2" onclick="openAddTaskModal('done')">
-                    <i class="fas fa-plus"></i>
-                    <span>Add Task</span>
-                </button>
-            </div>
+
+                <!-- In Progress Column -->
+                <div class="bg-white rounded-xl p-4 w-80 flex-shrink-0 flex flex-col h-[calc(100vh-120px)] shadow-sm border border-gray-200" data-status="in-progress">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 rounded-full bg-yellow-500 mr-2"></div>
+                            <h3 class="text-sm font-semibold text-gray-700">In Progress</h3>
+                            <span class="ml-2 px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-700 rounded-full" id="in-progress-count">1</span>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto pr-2 space-y-3" id="in-progress-tasks" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        <!-- Sample Task -->
+                        <div class="task-card bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-move" draggable="true" ondragstart="dragStart(event)">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-medium text-gray-900">Design new dashboard layout</h4>
+                                <div class="flex space-x-1">
+                                    <span class="px-2 py-0.5 text-xs font-medium bg-pink-100 text-pink-700 rounded-full">Design</span>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-3">Create high-fidelity mockups for the new dashboard with improved data visualization.</p>
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <div class="flex items-center">
+                                    <i class="far fa-calendar-alt mr-1"></i>
+                                    <span>Due in 5 days</span>
+                                </div>
+                                <div class="flex -space-x-1">
+                                    <img class="h-6 w-6 rounded-full border-2 border-white" src="https://randomuser.me/api/portraits/women/33.jpg" alt="">
+                                    <img class="h-6 w-6 rounded-full border-2 border-white" src="https://randomuser.me/api/portraits/men/46.jpg" alt="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="mt-3 w-full text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 p-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200 border border-dashed border-gray-300" onclick="openAddTaskModal('in-progress')">
+                        <i class="fas fa-plus"></i>
+                        <span>Add Task</span>
+                    </button>
+                </div>
+
+                <!-- Done Column -->
+                <div class="bg-white rounded-xl p-4 w-80 flex-shrink-0 flex flex-col h-[calc(100vh-120px)] shadow-sm border border-gray-200" data-status="done">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center">
+                            <div class="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
+                            <h3 class="text-sm font-semibold text-gray-700">Done</h3>
+                            <span class="ml-2 px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full" id="done-count">3</span>
+                        </div>
+                        <button class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto pr-2 space-y-3" id="done-tasks" ondrop="drop(event)" ondragover="allowDrop(event)">
+                        <!-- Sample Task 1 -->
+                        <div class="task-card bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-move opacity-70" draggable="true" ondragstart="dragStart(event)">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-medium text-gray-900 line-through">Fix login page responsive issues</h4>
+                                <div class="flex space-x-1">
+                                    <span class="px-2 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full">Frontend</span>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-3">Login form was breaking on mobile devices. Fixed the responsive design.</p>
+                            <div class="flex items-center justify-between text-xs text-gray-400">
+                                <div class="flex items-center">
+                                    <i class="far fa-check-circle mr-1"></i>
+                                    <span>Completed yesterday</span>
+                                </div>
+                                <div class="flex -space-x-1">
+                                    <img class="h-6 w-6 rounded-full border-2 border-white" src="https://randomuser.me/api/portraits/men/22.jpg" alt="">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sample Task 2 -->
+                        <div class="task-card bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 cursor-move opacity-70" draggable="true" ondragstart="dragStart(event)">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-medium text-gray-900 line-through">Set up CI/CD pipeline</h4>
+                                <div class="flex space-x-1">
+                                    <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">DevOps</span>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-500 mb-3">Configured GitHub Actions for automated testing and deployment.</p>
+                            <div class="flex items-center justify-between text-xs text-gray-400">
+                                <div class="flex items-center">
+                                    <i class="far fa-check-circle mr-1"></i>
+                                    <span>Completed 2 days ago</span>
+                                </div>
+                                <div class="flex -space-x-1">
+                                    <img class="h-6 w-6 rounded-full border-2 border-white" src="https://randomuser.me/api/portraits/women/28.jpg" alt="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="mt-3 w-full text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-50 p-2 rounded-lg flex items-center justify-center gap-2 transition-colors duration-200 border border-dashed border-gray-300" onclick="openAddTaskModal('done')">
+                        <i class="fas fa-plus"></i>
+                        <span>Add Task</span>
+                    </button>
+                </div>
         </div>
     </main>
     </div>
 
     <!-- Task Modal -->
-    <div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 hidden" style="backdrop-filter: blur(2px);">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md relative max-h-[90vh] overflow-y-auto">
-            <button type="button" onclick="closeTaskModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-500">
-                <i class="fas fa-times text-xl"></i>
-            </button>
+    <div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center p-4 z-50 hidden overflow-y-auto py-10" style="backdrop-filter: blur(2px);">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl relative my-8">
+            <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 rounded-t-xl">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900" id="modalTitle">Add New Task</h3>
+                    <button type="button" onclick="closeTaskModal()" class="text-gray-400 hover:text-gray-500">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
             
             <div class="p-6">
                 <h2 class="text-xl font-semibold text-gray-900 mb-6">Create New Task</h2>
-                
-                <form id="taskForm" class="space-y-4">
+                <div class="p-6">
+                <form id="taskForm" onsubmit="addTask(event)">
                     <input type="hidden" id="taskStatus" value="">
-                    
-                    <div class="space-y-1">
-                        <label for="taskTitle" class="block text-sm font-medium text-gray-700">Title <span class="text-red-500">*</span></label>
-                        <input type="text" id="taskTitle" required
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                    </div>
-                    
-                    <div class="space-y-1">
-                        <label for="taskDescription" class="block text-sm font-medium text-gray-700">Description</label>
-                        <textarea id="taskDescription" rows="3"
-                            class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"></textarea>
-                    </div>
-                    
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="space-y-1">
-                            <label for="taskPriority" class="block text-sm font-medium text-gray-700">Priority</label>
-                            <select id="taskPriority"
-                                class="mt-1 block w-full rounded-md border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm">
-                                <option value="low">Low</option>
-                                <option value="medium" selected>Medium</option>
-                                <option value="high">High</option>
-                                <option value="critical">Critical</option>
-                            </select>
+                    <div class="space-y-6">
+                        <!-- Task Title -->
+                        <div>
+                            <label for="taskTitle" class="block text-sm font-medium text-gray-700 mb-1">Task Title <span class="text-red-500">*</span></label>
+                            <input type="text" id="taskTitle" required 
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                                placeholder="Enter task title">
                         </div>
-                        
-                        <div class="space-y-1">
-                            <label for="taskAssignee" class="block text-sm font-medium text-gray-700">Assignee</label>
-                            <div class="relative mt-1">
-                                <input type="text" id="taskAssignee" placeholder="Name"
-                                    class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+
+                        <!-- Task Description -->
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <label for="taskDescription" class="block text-sm font-medium text-gray-700">Description</label>
+                                <span class="text-xs text-gray-500">Markdown supported</span>
+                            </div>
+                            <textarea id="taskDescription" rows="4" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200"
+                                placeholder="Add details about this task..."></textarea>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Due Date -->
+                            <div>
+                                <label for="taskDueDate" class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                                <div class="relative">
+                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <i class="far fa-calendar-alt text-gray-400"></i>
+                                    </div>
+                                    <input type="date" id="taskDueDate" 
+                                        class="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200">
+                                </div>
+                            </div>
+
+                            <!-- Priority -->
+                            <div>
+                                <label for="taskPriority" class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                                <div class="relative">
+                                    <select id="taskPriority" 
+                                        class="appearance-none w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200">
+                                        <option value="low" class="text-green-600">Low</option>
+                                        <option value="medium" selected class="text-yellow-600">Medium</option>
+                                        <option value="high" class="text-red-600">High</option>
+                                    </select>
+                                    <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                        <i class="fas fa-chevron-down text-gray-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Labels -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Labels</label>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                        UI/UX
+                                        <button type="button" class="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-blue-200 text-blue-600 hover:bg-blue-300 focus:outline-none">
+                                            <span class="sr-only">Remove UI/UX label</span>
+                                            <i class="fas fa-times text-[8px]"></i>
+                                        </button>
+                                    </span>
+                                    <button type="button" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-gray-500 hover:bg-gray-100">
+                                        <i class="fas fa-plus mr-1"></i> Add Label
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Assignees -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Assignees</label>
+                                <div class="flex -space-x-2">
+                                    <img class="h-8 w-8 rounded-full border-2 border-white" src="https://randomuser.me/api/portraits/women/44.jpg" alt="" title="Sarah Johnson">
+                                    <img class="h-8 w-8 rounded-full border-2 border-white" src="https://randomuser.me/api/portraits/men/32.jpg" alt="" title="Michael Chen">
+                                    <button type="button" class="h-8 w-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-400 hover:bg-gray-50">
+                                        <i class="fas fa-plus text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Subtasks -->
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="block text-sm font-medium text-gray-700">Subtasks</label>
+                                <button type="button" class="text-xs text-blue-600 hover:text-blue-800">+ Add subtask</button>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="subtask1" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    <label for="subtask1" class="ml-2 block text-sm text-gray-700">Create initial design mockups</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="subtask2" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    <label for="subtask2" class="ml-2 block text-sm text-gray-700">Gather feedback from team</label>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="pt-4 flex justify-end space-x-3">
-                        <button type="button" onclick="closeTaskModal()"
-                            class="btn btn-secondary">
+
+                    <!-- Form Actions -->
+                    <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end space-x-3">
+                        <button type="button" onclick="closeTaskModal()" 
+                            class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200">
                             Cancel
                         </button>
-                        <button type="submit"
-                            class="btn btn-primary">
+                        <button type="submit" 
+                            class="px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow-sm hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200">
+                            <i class="fas fa-plus mr-2"></i> Add Task
                             Create Task
                         </button>
                     </div>

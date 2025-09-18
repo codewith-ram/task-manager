@@ -26,13 +26,14 @@ function init() {
 
 // Load tasks from localStorage
 function loadTasks() {
-    const savedTasks = localStorage.getItem('jira-tasks');
+    const savedTasks = localStorage.getItem('tasks');
     tasks = savedTasks ? JSON.parse(savedTasks) : [];
 }
 
 // Save tasks to localStorage
 function saveTasks() {
-    localStorage.setItem('jira-tasks', JSON.stringify(tasks));
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+    updateTaskCounts();
 }
 
 // Setup event listeners
@@ -97,7 +98,21 @@ function openAddTaskModal(status = 'todo') {
 
 // Close task modal
 function closeTaskModal() {
-    taskModal.style.display = 'none';
+    const modal = document.getElementById('taskModal');
+    const modalContent = modal.querySelector('div');
+    
+    // Add closing animation
+    modalContent.classList.remove('opacity-100', 'translate-y-0');
+    modalContent.classList.add('opacity-0', 'translate-y-4');
+    
+    // Hide modal after animation
+    setTimeout(() => {
+        modal.classList.add('hidden');
+        document.getElementById('taskForm').reset();
+        
+        // Re-enable body scroll
+        document.body.style.overflow = '';
+    }, 200);
 }
 
 // Render all tasks in their respective columns
